@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundTrack Travel - Internal Prototype</title>
+    <title>SoundTrack Travel - Internal Prototype (Skyscanner Integrated)</title>
     <style>
         :root {
             --primary: #6366f1; /* Indigo */
@@ -169,27 +169,30 @@
                 <h3>✈️ Flights</h3>
                 <div class="mock-input">
                     <span>From: <strong>SIN</strong></span>
-                    <span>To: <strong id="flight-dest">NRT</strong></span>
+                    <span id="flight-origin-name">Singapore</span>
+                    <span>To: <strong id="flight-dest-code">NRT</strong></span>
+                    <span id="flight-dest-name">Tokyo</span>
                 </div>
                 <div class="mock-input">
                     <span>Depart: <strong id="flight-date-out">Nov 11</strong></span>
-                </div>
-                <div class="mock-input">
                     <span>Return: <strong id="flight-date-ret">Nov 13</strong></span>
                 </div>
-                <button class="btn" style="width: 100%; margin-top: 10px;">Search Flights</button>
+                <button class="btn" style="width: 100%; margin-top: 10px;" onclick="searchTravel('flights')">Search Flights 🚀</button>
             </div>
 
             <div class="travel-card">
                 <h3>🏨 Hotels</h3>
+                <div class="mock-input">
+                    <span>City: <strong id="hotel-city-name">Tokyo</strong></span>
+                </div>
                 <div class="mock-input">
                     <span>Area: <strong id="hotel-area">Near Tokyo Dome</strong></span>
                 </div>
                 <div class="mock-input">
                     <span>Check-in: <strong id="hotel-checkin">Nov 11</strong></span>
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">We found 3 hotels within walking distance of the venue.</p>
-                <button class="btn" style="width: 100%; margin-top: 10px;">View Hotels</button>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">We search for rooms near the venue.</p>
+                <button class="btn" style="width: 100%; margin-top: 10px;" onclick="searchTravel('hotels')">View Hotels 🛌</button>
             </div>
 
             <div class="travel-card">
@@ -197,8 +200,8 @@
                 <div class="mock-input">
                     <span>Pick-up: <strong id="car-loc">Airport</strong></span>
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Don't want to drive? Book a private transfer to the venue.</p>
-                <button class="btn" style="width: 100%; margin-top: 10px;">View Options</button>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Book transport from ${flight-dest-code} airport.</p>
+                <button class="btn" style="width: 100%; margin-top: 10px;" onclick="searchTravel('cars')">View Options 🚘</button>
             </div>
         </div>
 
@@ -215,26 +218,57 @@
 </div>
 
 <script>
+    // --- Configuration ---
+    const USER_ORIGIN_CODE = "SIN";
+    const USER_ORIGIN_NAME = "Singapore";
+
     // 1. Mock Data (9 Events)
     const events = [
-        { id: 1, artist: "Coldplay", city: "Tokyo", code: "NRT", venue: "Tokyo Dome", date: "2025-11-12", img: "https://images.unsplash.com/photo-1459749411177-0473ef7169ac?auto=format&fit=crop&w=800&q=80", insight: "Tokyo is huge! Stay near the Dome to avoid rush hour trains.", tags: ["Ramen", "Electronics", "Temples"] },
-        { id: 2, artist: "Taylor Swift", city: "London", code: "LHR", venue: "Wembley Stadium", date: "2025-08-15", img: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=800&q=80", insight: "Wembley is iconic. Grab a pint at a local pub before the gates open.", tags: ["Pub Culture", "History", "Tube"] },
-        { id: 3, artist: "The Weeknd", city: "Paris", code: "CDG", venue: "Stade de France", date: "2025-07-22", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80", insight: "The venue is slightly north of the center. Book a hotel in the 18th Arr. for easier access.", tags: ["Art", "Wine", "Fashion"] },
-        { id: 4, artist: "Bad Bunny", city: "Miami", code: "MIA", venue: "Hard Rock Stadium", date: "2025-09-10", img: "https://images.unsplash.com/photo-1535498730771-e735b998cd64?auto=format&fit=crop&w=800&q=80", insight: "It will be humid! Rent a convertible to drive down Ocean Drive.", tags: ["Beaches", "Nightlife", "Art Deco"] },
-        { id: 5, artist: "BTS", city: "Seoul", code: "ICN", venue: "Olympic Stadium", date: "2025-10-05", img: "https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=800&q=80", insight: "The fan culture here is unmatched. Visit the HYBE museum while you are in town.", tags: ["K-Pop", "BBQ", "Cafes"] },
-        { id: 6, artist: "Adele", city: "Las Vegas", code: "LAS", venue: "Caesars Palace", date: "2025-12-30", img: "https://images.unsplash.com/photo-1605833556294-ea5c7a94f394?auto=format&fit=crop&w=800&q=80", insight: "Stay right on the strip. Walking distances are longer than they look.", tags: ["Casinos", "Shows", "Luxury"] },
-        { id: 7, artist: "Ed Sheeran", city: "Melbourne", code: "MEL", venue: "MCG", date: "2026-02-14", img: "https://images.unsplash.com/photo-1514395465013-2dc046652fd8?auto=format&fit=crop&w=800&q=80", insight: "Melbourne has the best coffee in the world. The trams are free in the CBD.", tags: ["Coffee", "Sports", "Art Laneways"] },
-        { id: 8, artist: "Dua Lipa", city: "Barcelona", code: "BCN", venue: "Palau Sant Jordi", date: "2025-06-20", img: "https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=800&q=80", insight: "The concert starts late here. Enjoy tapas until 9 PM.", tags: ["Architecture", "Beach", "Tapas"] },
-        { id: 9, artist: "Metallica", city: "Berlin", code: "BER", venue: "Olympiastadion", date: "2025-05-18", img: "https://images.unsplash.com/photo-1560969184-10fe8719e047?auto=format&fit=crop&w=800&q=80", insight: "Berlin nightlife is legendary. The public transport system (U-Bahn) is excellent.", tags: ["History", "Techno", "Beer"] },
+        { id: 1, artist: "Coldplay", city: "Tokyo", code: "NRT", venue: "Tokyo Dome", date: "2025-11-12", airportName: "Narita", img: "https://images.unsplash.com/photo-1459749411177-0473ef7169ac?auto=format&fit=crop&w=800&q=80", insight: "Tokyo is huge! Stay near the Dome to avoid rush hour trains.", tags: ["Ramen", "Electronics", "Temples"] },
+        { id: 2, artist: "Taylor Swift", city: "London", code: "LHR", venue: "Wembley Stadium", date: "2025-08-15", airportName: "Heathrow", img: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=800&q=80", insight: "Wembley is iconic. Grab a pint at a local pub before the gates open.", tags: ["Pub Culture", "History", "Tube"] },
+        { id: 3, artist: "The Weeknd", city: "Paris", code: "CDG", venue: "Stade de France", date: "2025-07-22", airportName: "Charles de Gaulle", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80", insight: "The venue is slightly north of the center. Book a hotel in the 18th Arr. for easier access.", tags: ["Art", "Wine", "Fashion"] },
+        { id: 4, artist: "Bad Bunny", city: "Miami", code: "MIA", venue: "Hard Rock Stadium", date: "2025-09-10", airportName: "International", img: "https://images.unsplash.com/photo-1535498730771-e735b998cd64?auto=format&fit=crop&w=800&q=80", insight: "It will be humid! Rent a convertible to drive down Ocean Drive.", tags: ["Beaches", "Nightlife", "Art Deco"] },
+        { id: 5, artist: "BTS", city: "Seoul", code: "ICN", venue: "Olympic Stadium", date: "2025-10-05", airportName: "Incheon", img: "https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=800&q=80", insight: "The fan culture here is unmatched. Visit the HYBE museum while you are in town.", tags: ["K-Pop", "BBQ", "Cafes"] },
+        { id: 6, artist: "Adele", city: "Las Vegas", code: "LAS", venue: "Caesars Palace", date: "2025-12-30", airportName: "McCarran", img: "https://images.unsplash.com/photo-1605833556294-ea5c7a94f394?auto=format&fit=crop&w=800&q=80", insight: "Stay right on the strip. Walking distances are longer than they look.", tags: ["Casinos", "Shows", "Luxury"] },
+        { id: 7, artist: "Ed Sheeran", city: "Melbourne", code: "MEL", venue: "MCG", date: "2026-02-14", airportName: "Tullamarine", img: "https://images.unsplash.com/photo-1514395465013-2dc046652fd8?auto=format&fit=crop&w=800&q=80", insight: "Melbourne has the best coffee in the world. The trams are free in the CBD.", tags: ["Coffee", "Sports", "Art Laneways"] },
+        { id: 8, artist: "Dua Lipa", city: "Barcelona", code: "BCN", venue: "Palau Sant Jordi", date: "2025-06-20", airportName: "El Prat", img: "https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=800&q=80", insight: "The concert starts late here. Enjoy tapas until 9 PM.", tags: ["Architecture", "Beach", "Tapas"] },
+        { id: 9, artist: "Metallica", city: "Berlin", code: "BER", venue: "Olympiastadion", date: "2025-05-18", airportName: "Brandenburg", img: "https://images.unsplash.com/photo-1560969184-10fe8719e047?auto=format&fit=crop&w=800&q=80", insight: "Berlin nightlife is legendary. The public transport system (U-Bahn) is excellent.", tags: ["History", "Techno", "Beer"] },
     ];
+    
+    let currentEvent = null; // Store the currently selected event data
 
-    // 2. Render Functions
+    // 2. Helper Functions
+    function formatDateForDisplay(dateStr) {
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    function formatDateForUrl(dateStr) {
+        // Formats YYYY-MM-DD
+        return new Date(dateStr).toISOString().slice(0, 10);
+    }
+    
+    function getTripDates(eventDateStr) {
+        const eventDate = new Date(eventDateStr);
+        
+        const departDate = new Date(eventDate);
+        departDate.setDate(departDate.getDate() - 1);
+        
+        const returnDate = new Date(eventDate);
+        returnDate.setDate(returnDate.getDate() + 1);
+        
+        return {
+            depart: departDate,
+            return: returnDate
+        };
+    }
+
+    // 3. Render Discovery View
     function renderEvents() {
         const container = document.getElementById('events-container');
         container.innerHTML = events.map(event => `
             <div class="event-card">
                 <div class="card-img" style="background-image: url('${event.img}')">
-                    <div class="date-badge">${new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                    <div class="date-badge">${formatDateForDisplay(event.date)}</div>
                 </div>
                 <div class="card-body">
                     <div class="artist-name">${event.artist}</div>
@@ -245,27 +279,29 @@
         `).join('');
     }
 
-    // 3. Logic to Switch Views & Populate Data
+    // 4. Logic to Switch Views & Populate Data
     function openPlanner(id) {
         const event = events.find(e => e.id === id);
+        currentEvent = event; // Set global variable
+        const tripDates = getTripDates(event.date);
         
-        // Populate Text
+        // Populate Header Text
         document.getElementById('plan-title').innerText = `Trip to ${event.city}`;
         document.getElementById('plan-subtitle').innerHTML = `Seeing <strong>${event.artist}</strong> at ${event.venue}`;
-        document.getElementById('plan-date').innerText = event.date;
+        document.getElementById('plan-date').innerText = formatDateForDisplay(event.date);
         
         // Populate Flight Logic
-        document.getElementById('flight-dest').innerText = event.code;
-        // Mock date logic: Arrive 1 day before, Leave 1 day after
-        let d = new Date(event.date);
-        d.setDate(d.getDate() - 1);
-        document.getElementById('flight-date-out').innerText = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        d.setDate(d.getDate() + 2);
-        document.getElementById('flight-date-ret').innerText = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        document.getElementById('flight-dest-code').innerText = event.code;
+        document.getElementById('flight-dest-name').innerText = event.airportName;
+        document.getElementById('flight-origin-name').innerText = USER_ORIGIN_NAME;
+
+        document.getElementById('flight-date-out').innerText = formatDateForDisplay(tripDates.depart);
+        document.getElementById('flight-date-ret').innerText = formatDateForDisplay(tripDates.return);
 
         // Populate Hotel/Car Logic
+        document.getElementById('hotel-city-name').innerText = event.city;
         document.getElementById('hotel-area').innerText = `Near ${event.venue}`;
-        document.getElementById('hotel-checkin').innerText = document.getElementById('flight-date-out').innerText;
+        document.getElementById('hotel-checkin').innerText = formatDateForDisplay(tripDates.depart);
         document.getElementById('car-loc').innerText = `${event.code} Airport`;
 
         // Populate Insights
@@ -273,6 +309,42 @@
         document.getElementById('insight-tags').innerHTML = event.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
 
         toggleView();
+    }
+
+    // 5. CTA Redirection Logic (The Key Change)
+    function searchTravel(type) {
+        if (!currentEvent) return; // Safety check
+
+        const tripDates = getTripDates(currentEvent.date);
+        const departDate = formatDateForUrl(tripDates.depart);
+        const returnDate = formatDateForUrl(tripDates.return);
+
+        let url = '';
+        
+        // Skyscanner Flight URL Structure (Mocked Parameters)
+        if (type === 'flights') {
+            const origin = USER_ORIGIN_CODE;
+            const destination = currentEvent.code;
+            url = `https://www.skyscanner.net/transport/flights/${origin}/${destination}/${departDate}/${returnDate}/?adults=2&rtn=1`;
+            
+            // NOTE: Using a real Skyscanner URL template ensures the redirect looks legitimate.
+
+        // Skyscanner Hotel URL Structure (Mocked Parameters)
+        } else if (type === 'hotels') {
+            const city = currentEvent.city;
+            url = `https://www.skyscanner.net/hotels/${city}-hotels/h${Math.floor(Math.random() * 1000)}/checkin/${departDate}/checkout/${returnDate}?guests=2&rooms=1`;
+            
+            // NOTE: The real product would pass Venue Lat/Long for hyper-local searching.
+
+        // Skyscanner Car Hire URL Structure (Mocked Parameters)
+        } else if (type === 'cars') {
+            const airport = currentEvent.code;
+            url = `https://www.skyscanner.net/car-hire-search/${airport}/${departDate}/${returnDate}?puid=10101`;
+        }
+
+        if (url) {
+            window.open(url, '_blank');
+        }
     }
 
     function toggleView() {
