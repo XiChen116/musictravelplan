@@ -311,41 +311,47 @@
         toggleView();
     }
 
-    // 5. CTA Redirection Logic (The Key Change)
-    function searchTravel(type) {
-        if (!currentEvent) return; // Safety check
+    
 
-        const tripDates = getTripDates(currentEvent.date);
-        const departDate = formatDateForUrl(tripDates.depart);
-        const returnDate = formatDateForUrl(tripDates.return);
+// 5. CTA Redirection Logic (Updated to YYMMDD format)
+function formatDateForSkyscanner(dateStr) {
+    const d = new Date(dateStr);
+    const yy = d.getFullYear().toString().slice(-2);
+    const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+    const dd = d.getDate().toString().padStart(2, '0');
+    return `${yy}${mm}${dd}`; // Returns format: YYMMDD
+}
 
-        let url = '';
-        
-        // Skyscanner Flight URL Structure (Mocked Parameters)
-        if (type === 'flights') {
-            const origin = USER_ORIGIN_CODE;
-            const destination = currentEvent.code;
-            url = `https://www.skyscanner.net/transport/flights/${origin}/${destination}/${departDate}/${returnDate}/?adults=2&rtn=1`;
-            
-            // NOTE: Using a real Skyscanner URL template ensures the redirect looks legitimate.
+function searchTravel(type) {
+    if (!currentEvent) return; 
 
-        // Skyscanner Hotel URL Structure (Mocked Parameters)
-        } else if (type === 'hotels') {
-            const city = currentEvent.city;
-            url = `https://www.skyscanner.net/hotels/${city}-hotels/h${Math.floor(Math.random() * 1000)}/checkin/${departDate}/checkout/${returnDate}?guests=2&rooms=1`;
-            
-            // NOTE: The real product would pass Venue Lat/Long for hyper-local searching.
+    const tripDates = getTripDates(currentEvent.date);
+    
+    // Using the new YYMMDD format
+    const departYYMMDD = formatDateForSkyscanner(tripDates.depart);
+    const returnYYMMDD = formatDateForSkyscanner(tripDates.return);
 
-        // Skyscanner Car Hire URL Structure (Mocked Parameters)
-        } else if (type === 'cars') {
-            const airport = currentEvent.code;
-            url = `https://www.skyscanner.net/car-hire-search/${airport}/${departDate}/${returnDate}?puid=10101`;
-        }
+    let url = '';
+    
+    if (type === 'flights') {
+        const origin = USER_ORIGIN_CODE;
+        const destination = currentEvent.code;
+        // Example URL using the YYMMDD string in the path or query
+        url = `https://www.skyscanner.net/transport/flights/${origin}/${destination}/${departYYMMDD}/${returnYYMMDD}/?adults=2&rtn=1`;
 
-        if (url) {
-            window.open(url, '_blank');
-        }
+    } else if (type === 'hotels') {
+        const city = currentEvent.city;
+        url = `https://www.skyscanner.net/hotels/${city}-hotels/checkin/${departYYMMDD}/checkout/${returnYYMMDD}?guests=2`;
+
+    } else if (type === 'cars') {
+        const airport = currentEvent.code;
+        url = `https://www.skyscanner.net/car-hire-search/${airport}/${departYYMMDD}/${returnYYMMDD}?puid=101`;
     }
+
+    if (url) {
+        window.open(url, '_blank');
+    }
+}
 
     function toggleView() {
         const discovery = document.getElementById('discovery-view');
